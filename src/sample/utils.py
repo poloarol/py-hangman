@@ -1,13 +1,15 @@
 """ utils.py """
 
+import sys
 import random
 from typing import List
 
 import requests
 import outputformat as out
+from requests.exceptions import ConnectTimeout, HTTPError, ReadTimeout, Timeout
 
 
-def get_words_from_dictionary() -> List[str]:
+def dictionary_connection() -> List[str]:
     """
     Connects to MIT's wordlist API to collect
     words of lenght five to seven.
@@ -16,10 +18,29 @@ def get_words_from_dictionary() -> List[str]:
     ------
     words: List[str]
     """
-    url: str = "https://www.mit.edu/~ecprice/wordlist.10000"
-    response = requests.get(url)
-    all_words: List[str] = response.content.splitlines()
-    words: List[str] = list((word.decode() for word in all_words if 4 < len(word) < 8))
+
+    try:
+        url: str = "https://www.mit.edu/~ecprice/wordlist.10000"
+        response = requests.get(url)
+        return response.content.splitlines()
+    except (ConnectTimeout, HTTPError, ReadTimeout, Timeout, ConnectionError) as err_msg:
+        print(f"Error occured when obtaining dictionary: {str(err_msg)}")
+        sys.exit()
+
+def gameplay_words() -> List[str]:
+    """
+    Gets all words from the dictionary and words with
+    size five to eight.
+
+    Return
+    ------
+    words (list[str]): All words of size five to eight
+    """
+
+    min_word_size, max_word_size = 4, 9
+    all_words: List[str] = dictionary_connection()
+    words: List[str] = list((word.decode() for word in \
+        all_words if min_word_size < len(word) < max_word_size))
 
     return words
 
@@ -33,7 +54,7 @@ def get_random_word() -> str:
     word: str
     """
 
-    words: List[str] = get_words_from_dictionary()
+    words: List[str] = gameplay_words()
     word: str = random.choice(words)
 
     return word.upper()
