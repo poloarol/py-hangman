@@ -1,7 +1,7 @@
 """ model.py """
 
 import string
-from typing import Dict, List
+from typing import Dict, List, Any
 
 import numpy as np
 import six
@@ -19,7 +19,8 @@ def set_seed(seed: int = 42) -> None:
 
 
 def pad_sequences(
-    sequences, maxlen=None, dtype="int32", padding="pre", truncating="pre", value=0.0
+    sequences: str , maxlen: Any = None, dtype: int ="int32",\
+        padding: str = "pre", truncating: str = "pre", value: float = 0.0
 ):
     """
     Pads sequences to the same length.
