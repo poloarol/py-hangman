@@ -5,8 +5,7 @@ from typing import Dict, List, Any
 
 import numpy as np
 import six
-import tensorflow as tf
-from tensorflow.keras import layers, models, optimizers
+from keras import layers, models, optimizers
 
 letters: List[str] = list(string.ascii_lowercase)
 letters_dict: Dict[str, int] = {letter: i for i, letter in enumerate(letters)}
@@ -230,29 +229,34 @@ class Agent:
 
     @staticmethod
     def guessed_mat(guessed):
-
+        """ generate guess matrix """
         mat = np.empty([1, 26])
 
         for i, letter in enumerate(letters):
             mat[0, i] = 1 if letter in guessed else 0
 
-        return
+        return mat
 
     def get_guessed_mat(self):
+        """ return guessed matrix """
         return self.guessed_mat(self.guessed)
 
     def reset_guessed(self) -> None:
+        """ reset guessed matrix """
         self.guessed = []
 
     @property
     def policy(self):
+        """ return policy implemented """
         return self.policy
 
     @policy.setter
     def set_policy(self, new_policy: str) -> str:
+        """ set policy to implement """
         self.policy = new_policy
 
     def select_action(self, state):
+        """ actions """
         probs = self.get_probs(state)
         if self.policy == "greedy":
             i = 1
@@ -268,13 +272,16 @@ class Agent:
         return guess
 
     def get_probs(self, state):
+        """ return probability """
         raise NotImplementedError()
 
     def eval(self):
+        """ evaluate model """
         self.is_training = False
         self.set_policy("greedy")
 
     def train(self):
+        """ train model """
         self.is_training = True
 
 
@@ -303,6 +310,7 @@ class Network_Agent(Agent):
         return probs
 
     def finalize_episode(self, answer) -> None:
+        """ guess words """
         input_one, input_two = zip(*self.episodic_memory)
         input_one = np.vstack(list(input_one)).astype(
             float
@@ -328,6 +336,7 @@ class Network_Agent(Agent):
         self.reset_guessed()
 
     def preprocess_input(self, state):
+        """ Process input """
         new_input = []
 
         for letter in state:
@@ -338,3 +347,7 @@ class Network_Agent(Agent):
         if self.is_training:
             self.episodic_memory.append((state, self.get_guessed_mat()))
         return state, self.get_guessed_mat()
+
+
+if __name__ == "__main__":
+    pass
