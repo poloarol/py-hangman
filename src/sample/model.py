@@ -222,7 +222,7 @@ class Agent:
         if policy not in ["greedy", "stochastic"]:
             raise ValueError("Policy must be either stochastic or greedy")
 
-        self.policy: bool = policy
+        self.policy: str = policy
         self.model: models.Model = model
         self.is_training: bool = is_training
         self.guessed: List[str] = []

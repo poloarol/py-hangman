@@ -2,7 +2,7 @@
 
 import sys
 import random
-from typing import List
+from typing import List, Tuple, Dict
 
 import requests
 import outputformat as out
@@ -40,9 +40,30 @@ def gameplay_words() -> List[str]:
     min_word_size, max_word_size = 4, 9
     all_words: List[str] = dictionary_connection()
     words: List[str] = list((word.decode() for word in \
-        all_words if min_word_size < len(word) < max_word_size))
+        all_words if min_word_size < len(word) < max_word_size\
+            and word.isalpha()))
 
     return words
+
+def get_train_test_set() -> Tuple:
+    """ Build train and test set """
+    words: List[str] = dictionary_connection()
+    word_organizer: Dict[str, str] = {}
+
+    train_set, test_set = [], []
+
+    for word in words:
+        first_character: str = word[:1]
+        word_organizer[first_character] = word
+
+    for _, value in word_organizer.items():
+        shuffled_words: List[str] = random.sample(value, len(value))
+        size: int = int(round(0.8*len(shuffled_words)))
+        train_set.append(shuffled_words[size:])
+        test_set.append(shuffled_words[:size])
+
+    return train_set, test_set
+
 
 def get_random_word() -> str:
     """
@@ -108,22 +129,23 @@ def prettify_display(display: str) -> str:
 
 
 if __name__ == "__main__":
-    random_word: str = get_random_word()
-    print(random_word)
-    print_display: str = "*"*len(random_word)
+    pass
+    # rand_word: str = get_random_word()
+    # print(rand_word)
+    # p_display: str = "*"*len(rand_word)
 
-    counter: int = 0
-    number_of_guesses: int = len(random_word)
-    print(get_display_word(word=random_word, display=print_display))
+    # counts: int = 0
+    # num_of_guesses: int = len(rand_word)
+    # print(get_display_word(word=rand_word, display=p_display))
 
-    while counter <= number_of_guesses and "*" in print_display:
-        character: str = input("Enter a letter: ").upper()
+    # while counts <= num_of_guesses and "*" in p_display:
+    #     char: str = input("Enter a letter: ").upper()
 
-        while len(character) > 1:
-            character = input("You can only guess letters! Enter a letter again: ").upper()
+    #     while len(char) > 1:
+    #         char = input("You can only guess letters! Enter a letter again: ").upper()
 
-        print_display = get_display_word(word=random_word,\
-            display=print_display, letter=character)
+    #     p_display = get_display_word(word=rand_word,\
+    #         display=p_display, letter=char)
 
-        screen_display: str = prettify_display(print_display)
-        print(screen_display)
+    #     s_display: str = prettify_display(p_display)
+    #     print(s_display)
