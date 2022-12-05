@@ -7,7 +7,7 @@ from typing import List
 import tqdm
 from keras import optimizers
 
-from model import Network_Agent, WordNet
+from model import NetworkAgent, WordNet
 from hangman import Hangman
 from utils import get_train_test_set
 
@@ -35,40 +35,41 @@ def train() -> None:
     copy_train_set: List[str] = train_set[:]
 
 
-    longuest_word_size: int = max(list(map(len, train_set)))
+    # longuest_word_size: int = max(max(list(map(len, train_set))), max(list(map(len, test_set))))
+    longuest_word_size: int = 26
     print(f"The longuest word has length: {longuest_word_size}")
 
     word_network = WordNet(max_word_size=longuest_word_size)
-    agent_network = Network_Agent(max_word_size=longuest_word_size, model=word_network)
+    agent_network = NetworkAgent(max_word_size=longuest_word_size, model=word_network, policy="stochastic")
 
-    agent_network.summary()
+    word_network.summary()
 
     for episode_set in progress_bar:
         for _ in range(update_episode):
-
             word: str = random.choice(copy_train_set)
             copy_train_set.remove(word)
             environment: Hangman = Hangman(word=word)
-
-            game_state: str = environment.current_board()
             game_completed: bool = False
             num_of_correct_guesses: int = 0
 
             while not game_completed:
+                game_state: str = environment.get_board()
                 current_guess: str = agent_network.select_action(state = game_state)
                 game_state, reward, game_completed, answer =\
-                    agent_network.step(letter = current_guess)
+                    environment.step(letter = current_guess)
 
                 if reward > 0:
                     num_of_correct_guesses = num_of_correct_guesses + 1
 
-                if reward == agent_network.win_reward:
+                if reward == environment.win_reward:
                     wins = wins + 1
 
-                agent_network.finalize_episode(answer=answer.ans)
+                agent_network.finalize_episode(answer=answer.get("ans", ""))
                 average_correct_guesses = num_of_correct_guesses + len(word)
 
-        loss: float = agent_network.train()
+                print(current_guess, answer["ans"])
+
+        loss: float = agent_network.train_model()
         progress_bar.set_description(f"Loss : {loss :.3f}")
 
         if (episode_set +1) % view_episode == 0 :

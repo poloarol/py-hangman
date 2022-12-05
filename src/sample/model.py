@@ -9,12 +9,7 @@ from keras import layers, models, optimizers
 
 letters: List[str] = list(string.ascii_lowercase)
 letters_dict: Dict[str, int] = {letter: i for i, letter in enumerate(letters)}
-letters_dict["-"] = 27
-
-
-def set_seed(seed: int = 42) -> None:
-    """set tensorflow seed"""
-    tf.set_random_seed(seed)
+letters_dict["*"] = 27
 
 
 def pad_sequences(
@@ -119,15 +114,15 @@ class WordNet:
     def __init__(self, max_word_size: int = 8) -> None:
         self.max_word_size: int = max_word_size
 
-    def __post_init__(self) -> None:
+    # def __post_init__(self) -> None:
         state_embedding = self.get_state_embedding()
         guessed_embedding = self.get_guessed_embedding()
         x_input = layers.Concatenate()(
             [state_embedding.output, guessed_embedding.output]
         )
         x_input = layers.Dense(100, activation="tanh")(x_input)
-        x_input = layers.Dense(26, activation="softmax")(x_input)
-        self.full_model = layers.Model(
+        x_input = layers.Dense(self.max_word_size, activation="softmax")(x_input)
+        self.full_model = models.Model(
             [state_embedding.input, guessed_embedding.input], x_input, name="fullmodel"
         )
         self.compile()
@@ -222,7 +217,7 @@ class Agent:
         if policy not in ["greedy", "stochastic"]:
             raise ValueError("Policy must be either stochastic or greedy")
 
-        self.policy: str = policy
+        self._policy: str = policy
         self.model: models.Model = model
         self.is_training: bool = is_training
         self.guessed: List[str] = []
@@ -248,27 +243,37 @@ class Agent:
     @property
     def policy(self):
         """ return policy implemented """
-        return self.policy
+        return self._policy
 
     @policy.setter
     def set_policy(self, new_policy: str) -> str:
         """ set policy to implement """
-        self.policy = new_policy
+        self._policy = new_policy
 
     def select_action(self, state):
         """ actions """
+
+        idx_act: int
         probs = self.get_probs(state)
-        if self.policy == "greedy":
+
+        if self._policy == "greedy":
             i = 1
             sorted_probs = probs.argsort()
+
             while letters[sorted_probs[-i]] in self.guessed:
-                i += 1
+                print(i)
+                i = i + 1
+
             idx_act = sorted_probs[-i]
-        elif self.policy == "stochastic":
+
+        elif self._policy == "stochastic":
             idx_act = np.random.choice(np.arange(probs.shape[0]), p=probs)
+
         guess = letters[idx_act]
+
         if guess not in self.guessed:
             self.guessed.append(guess)
+
         return guess
 
     def get_probs(self, state):
@@ -285,7 +290,7 @@ class Agent:
         self.is_training = True
 
 
-class Network_Agent(Agent):
+class NetworkAgent(Agent):
     """ Network Agent for Hangman game"""
 
     def __init__(
@@ -305,9 +310,19 @@ class Network_Agent(Agent):
 
         state = self.preprocess_input(state)
         probs = self.model(*state)
-        probs /= probs.sum()
+        probs = probs / probs.sum()
 
         return probs
+
+    def train_model(self):
+        inp_1, inp_2, obj = zip(*self.state_history)
+        inp_1 = np.vstack(list(inp_1)).astype(float)
+        inp_2 = np.vstack(list(inp_2)).astype(float)
+        obj = np.vstack(list(obj)).astype(float)
+        loss = self.model.train_on_batch([inp_1,inp_2], obj)
+        self.state_history = []
+
+        return loss
 
     def finalize_episode(self, answer) -> None:
         """ guess words """
@@ -350,4 +365,5 @@ class Network_Agent(Agent):
 
 
 if __name__ == "__main__":
-    pass
+    word_net = WordNet()
+    agent_network = NetworkAgent(max_word_size=8, model=word_net)

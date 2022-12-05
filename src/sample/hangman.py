@@ -15,16 +15,16 @@ class Hangman:
         self.current_word: str = word
         self.win_reward: int = 30
         self.correct_reward: int = 1
-        self.incorrect_reward: int = -1
-        self.lose_reward: int = -1
+        self.incorrect_reward: int = 0
+        self.lose_reward: int = 0
         self.repeated_guessing_penalty: int = -100
         self.guessed: List[str] = []
         self.completed: bool = False
-        self.answer: Dict = {'ans': ""}
+        self.answer: Dict = {"ans": ""}
 
-    def __post_init__(self):
+    # def __post_init__(self):
         self.current_board: str = "*" * len(self.current_word)
-        self.number_of_guesses: int = len(self.current_word)
+        self.number_of_guesses: int = 0
 
     def play(self) -> bool:
         """ allows to play the game """
@@ -62,40 +62,46 @@ class Hangman:
         """ Provides steps for the AI to play hangman """
 
         if not letter.isalpha():
-            raise TypeError("Only use the alohabet")
+            raise TypeError("Only use the alphabet")
 
-        if letter not in self.current_word:
+        self.number_of_guesses = self.number_of_guesses + 1
+
+        if letter not in self.guessed:
             self.guessed.append(letter)
-            self.number_of_guesses = self.number_of_guesses + 1
-            print(f"{letter} already used.")
-
+        else:
+            print(f"{letter} not in word")
             return self.get_board(), self.repeated_guessing_penalty, self.completed, self.answer
 
         if letter in self.current_word:
-            for i in self.current_word:
-                if letter == self.current_word[i]:
-                    self.current_board[i] = letter
+            tmp_str: str = ""
+            for _, character in enumerate(self.current_word):
+                if letter == character:
+                    tmp_str = tmp_str + letter
                     self.correct_reward = self.correct_reward + 1
-                    self.number_of_guesses = self.number_of_guesses + 1
+                else:
+                    tmp_str = tmp_str + character
 
-            if "*" not in self.current_board and self.number_of_guesses <= len(self.current_word):
-                print("You Win !!!")
-                self.completed = True
-                self.answer['ans'] = self.current_board
-                return self.get_board(), self.win_reward, self.completed, self.answer
+            self.current_word = tmp_str
 
-            self.answer['ans'] = self.current_board
-            return self.get_board(), self.correct_reward, self.completed, self.answer
+            if self.number_of_guesses <= len(self.current_word):
+                if "*" not in self.current_board:
+                    print("You Win !!!")
+                    self.completed = True
+                    self.answer["ans"] = self.current_board
+                    return self.get_board(), self.win_reward, self.completed, self.answer
+
+                self.answer["ans"] = self.current_board
+                return self.get_board(), self.correct_reward, self.completed, self.answer
 
         if "*" in self.current_board:
             if self.number_of_guesses >= len(self.current_word):
                 self.completed = True
                 print("You lose !!!")
 
-                self.answer['ans'] = self.current_board
+                self.answer["ans"] = self.current_board
                 return self.get_board(), self.lose_reward, self.completed, self.answer
 
-            self.answer['ans'] = self.current_board
+            self.answer["ans"] = self.current_board
             return self.get_board(), self.incorrect_reward, self.completed, self.answer
 
-        return None
+        return ()

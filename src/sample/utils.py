@@ -53,14 +53,20 @@ def get_train_test_set() -> Tuple:
     train_set, test_set = [], []
 
     for word in words:
-        first_character: str = word[:1]
-        word_organizer[first_character] = word
+        str_word: str = word.decode()
+
+        first_character: str = str_word[:1]
+
+        if word_organizer.get(first_character, None):
+            word_organizer[first_character].append(str_word)
+        else:
+            word_organizer[first_character] = [str_word]
 
     for _, value in word_organizer.items():
         shuffled_words: List[str] = random.sample(value, len(value))
         size: int = int(round(0.8*len(shuffled_words)))
-        train_set.append(shuffled_words[size:])
-        test_set.append(shuffled_words[:size])
+        train_set.extend(shuffled_words[:size])
+        test_set.extend(shuffled_words[size:])
 
     return train_set, test_set
 
@@ -101,8 +107,8 @@ def get_display_word(word: str, display: str, letter: str = "") -> str:
     copy_display: List[str] = list(display)
 
     for i, char_pair in enumerate(zip(display, word)):
-        _, char = char_pair
-        if letter == char:
+        _, char_two = char_pair
+        if letter == char_two:
             copy_display[i] = letter
 
     return "".join(copy_display)
@@ -130,22 +136,3 @@ def prettify_display(display: str) -> str:
 
 if __name__ == "__main__":
     pass
-    # rand_word: str = get_random_word()
-    # print(rand_word)
-    # p_display: str = "*"*len(rand_word)
-
-    # counts: int = 0
-    # num_of_guesses: int = len(rand_word)
-    # print(get_display_word(word=rand_word, display=p_display))
-
-    # while counts <= num_of_guesses and "*" in p_display:
-    #     char: str = input("Enter a letter: ").upper()
-
-    #     while len(char) > 1:
-    #         char = input("You can only guess letters! Enter a letter again: ").upper()
-
-    #     p_display = get_display_word(word=rand_word,\
-    #         display=p_display, letter=char)
-
-    #     s_display: str = prettify_display(p_display)
-    #     print(s_display)
