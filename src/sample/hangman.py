@@ -1,6 +1,6 @@
 """ hangman.py """
 
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Final
 
 from utils import get_display_word, prettify_display
 
@@ -24,7 +24,8 @@ class Hangman:
 
     # def __post_init__(self):
         self.current_board: str = "*" * len(self.current_word)
-        self.number_of_guesses: int = 0
+        self.number_of_bad_guesses: int = 0
+        self.max_number_of_bad_guesses: Final[int] = 6
 
     def play(self) -> bool:
         """ allows to play the game """
@@ -32,7 +33,7 @@ class Hangman:
         counter: int = 0
         print(get_display_word(word=self.current_word, display=self.current_board))
 
-        while counter <= self.number_of_guesses and "*" in self.current_board:
+        while counter <= self.max_number_of_bad_guesses and "*" in self.current_board:
             character: str = input("Enter a letter: ").upper()
 
             while len(character) > 1:
@@ -64,11 +65,10 @@ class Hangman:
         if not letter.isalpha():
             raise TypeError("Only use the alphabet")
 
-        self.number_of_guesses = self.number_of_guesses + 1
-
         if letter not in self.guessed:
             self.guessed.append(letter)
         else:
+            self.number_of_bad_guesses = self.number_of_bad_guesses + 1
             print(f"{letter} not in word")
             return self.get_board(), self.repeated_guessing_penalty, self.completed, self.answer
 
@@ -83,7 +83,7 @@ class Hangman:
 
             self.current_word = tmp_str
 
-            if self.number_of_guesses <= len(self.current_word):
+            if self.number_of_bad_guesses <= self.max_number_of_bad_guesses:
                 if "*" not in self.current_board:
                     print("You Win !!!")
                     self.completed = True
@@ -94,7 +94,7 @@ class Hangman:
                 return self.get_board(), self.correct_reward, self.completed, self.answer
 
         if "*" in self.current_board:
-            if self.number_of_guesses >= len(self.current_word):
+            if self.number_of_bad_guesses == self.max_number_of_bad_guesses:
                 self.completed = True
                 print("You lose !!!")
 

@@ -314,14 +314,15 @@ class NetworkAgent(Agent):
 
         return probs
 
-    def train_model(self):
+    def train_model(self) -> float:
+
         inp_1, inp_2, obj = zip(*self.state_history)
         inp_1 = np.vstack(list(inp_1)).astype(float)
         inp_2 = np.vstack(list(inp_2)).astype(float)
         obj = np.vstack(list(obj)).astype(float)
-        loss = self.model.train_on_batch([inp_1,inp_2], obj)
-        self.state_history = []
 
+        loss = self.model.train_on_batch([inp_1, inp_2], obj)
+        self.state_history = []
         return loss
 
     def finalize_episode(self, answer) -> None:

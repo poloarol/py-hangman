@@ -5,6 +5,7 @@ import random
 from typing import List
 
 import tqdm
+import numpy as np
 from keras import optimizers
 
 from model import NetworkAgent, WordNet
@@ -40,7 +41,7 @@ def train() -> None:
     print(f"The longuest word has length: {longuest_word_size}")
 
     word_network = WordNet(max_word_size=longuest_word_size)
-    agent_network = NetworkAgent(max_word_size=longuest_word_size, model=word_network, policy="stochastic")
+    agent_network = NetworkAgent(max_word_size=longuest_word_size, model=word_network)
 
     word_network.summary()
 
@@ -67,9 +68,7 @@ def train() -> None:
                 agent_network.finalize_episode(answer=answer.get("ans", ""))
                 average_correct_guesses = num_of_correct_guesses + len(word)
 
-                print(current_guess, answer["ans"])
-
-        loss: float = agent_network.train_model()
+        loss: float = agent_network.train_model() if not np.isnan(agent_network.train_model()) else 0
         progress_bar.set_description(f"Loss : {loss :.3f}")
 
         if (episode_set +1) % view_episode == 0 :
