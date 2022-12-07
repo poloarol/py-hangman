@@ -2,7 +2,7 @@
 
 import sys
 import random
-from typing import List, Tuple, Dict
+from typing import List, Tuple
 
 import requests
 import outputformat as out
@@ -45,30 +45,11 @@ def gameplay_words() -> List[str]:
 
     return words
 
-def get_train_test_set() -> Tuple:
+def get_all_words() -> Tuple:
     """ Build train and test set """
+
     words: List[str] = dictionary_connection()
-    word_organizer: Dict[str, str] = {}
-
-    train_set, test_set = [], []
-
-    for word in words:
-        str_word: str = word.decode()
-
-        first_character: str = str_word[:1]
-
-        if word_organizer.get(first_character, None):
-            word_organizer[first_character].append(str_word)
-        else:
-            word_organizer[first_character] = [str_word]
-
-    for _, value in word_organizer.items():
-        shuffled_words: List[str] = random.sample(value, len(value))
-        size: int = int(round(0.8*len(shuffled_words)))
-        train_set.extend(shuffled_words[:size])
-        test_set.extend(shuffled_words[size:])
-
-    return train_set, test_set
+    return words
 
 
 def get_random_word() -> str:

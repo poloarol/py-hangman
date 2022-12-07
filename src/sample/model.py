@@ -1,370 +1,126 @@
 """ model.py """
 
 import string
-from typing import Dict, List, Any
+from collections import defaultdict
+from typing import Dict, Final, Set, List
 
-import numpy as np
-import six
-from keras import layers, models, optimizers
-
-letters: List[str] = list(string.ascii_lowercase)
-letters_dict: Dict[str, int] = {letter: i for i, letter in enumerate(letters)}
-letters_dict["*"] = 27
+from utils import get_all_words, get_random_word
 
 
-def pad_sequences(
-    sequences: str , maxlen: Any = None, dtype: int ="int32",\
-        padding: str = "pre", truncating: str = "pre", value: float = 0.0
-):
+class HangmanAI:
     """
-    Pads sequences to the same length.
-    This function transforms a list of
-    `num_samples` sequences (lists of integers)
-    into a 2D Numpy array of shape `(num_samples, num_timesteps)`.
-    `num_timesteps` is either the `maxlen` argument if provided,
-    or the length of the longest sequence otherwise.
-    Sequences that are shorter than `num_timesteps`
-    are padded with `value` at the end.
-    Sequences longer than `num_timesteps` are truncated
-    so that they fit the desired length.
-    The position where padding or truncation happens is determined by
-    the arguments `padding` and `truncating`, respectively.
-    Pre-padding is the default.
-    # Arguments
-        sequences: List of lists, where each element is a sequence.
-        maxlen: Int, maximum length of all sequences.
-        dtype: Type of the output sequences.
-            To pad sequences with variable length strings, you can use `object`.
-        padding: String, 'pre' or 'post':
-            pad either before or after each sequence.
-        truncating: String, 'pre' or 'post':
-            remove values from sequences larger than
-            `maxlen`, either at the beginning or at the end of the sequences.
-        value: Float or String, padding value.
-    # Returns
-        x: Numpy array with shape `(len(sequences), maxlen)`
-    # Raises
-        ValueError: In case of invalid values for `truncating` or `padding`,
-            or in case of invalid shape for a `sequences` entry.
+    AI model that plays hangman
     """
 
-    if not hasattr(sequences, "__len__"):
-        raise ValueError("`sequences` must be iterable.")
-    num_samples = len(sequences)
+    def __init__(self, word: str, words: List[str]) -> None:
+        self.current_word: str = word
+        self.possible_words: Set[str] = words
+        self.guessed_word: str = "*" * len(word)
+        self.alphabet: List[str] = list(string.ascii_uppercase)
 
-    lengths = []
-    for sequence in sequences:
-        lengths.append(len(sequence))
-
-    if maxlen is None:
-        maxlen = np.max(lengths)
-
-    # take the sample shape from the first non empty sequence
-    # checking for consistency in the main loop below.
-    sample_shape = tuple()
-    for sequence in sequences:
-        if len(sequence) > 0:
-            sample_shape = np.asarray(sequence).shape[1:]
-            break
-
-    is_dtype_str = np.issubdtype(dtype, np.str_) or np.issubdtype(dtype, np.unicode_)
-    if isinstance(value, six.string_types) and dtype != object and not is_dtype_str:
-        raise ValueError(
-            f"`dtype` {dtype} is not compatible with `value`'s\
-        type: {type(value)}. You should set `dtype=object` for variable length strings."
-        )
-
-    x_var = np.full((num_samples, maxlen) + sample_shape, value, dtype=dtype)
-    for idx, sequence in enumerate(sequences):
-        if not sequence:
-            continue  # empty list/array was found
-        if truncating == "pre":
-            trunc = sequence[-maxlen:]
-        elif truncating == "post":
-            trunc = sequence[:maxlen]
-        else:
-            raise ValueError("Truncating type {trucating} not understood")
-
-        # check `trunc` has expected shape
-        trunc = np.asarray(trunc, dtype=dtype)
-        if trunc.shape[1:] != sample_shape:
-            raise ValueError(
-                f"Shape of sample {trunc.shape[1:]}\
-                of sequence at position {idx}\
-                is different from expected shape {sample_shape}"
-            )
-
-        if padding == "post":
-            x_var[idx, : len(trunc)] = trunc
-        elif padding == "pre":
-            x_var[idx, -len(trunc) :] = trunc
-        else:
-            raise ValueError(f"Padding type {padding} not understood")
-    return x_var
-
-
-class WordNet:
-    """
-    Defines a bidirectional LSTM network.
-    The network consists of two input that,
-    reads the current state and a one-hot
-    encoded matrix of guessed letters.
-    """
-
-    def __init__(self, max_word_size: int = 8) -> None:
-        self.max_word_size: int = max_word_size
-
-    # def __post_init__(self) -> None:
-        state_embedding = self.get_state_embedding()
-        guessed_embedding = self.get_guessed_embedding()
-        x_input = layers.Concatenate()(
-            [state_embedding.output, guessed_embedding.output]
-        )
-        x_input = layers.Dense(100, activation="tanh")(x_input)
-        x_input = layers.Dense(self.max_word_size, activation="softmax")(x_input)
-        self.full_model = models.Model(
-            [state_embedding.input, guessed_embedding.input], x_input, name="fullmodel"
-        )
-        self.compile()
-
-    def get_state_embedding(self) -> models.Model:
+    def prune_by_letter(self, letter: str) -> None:
         """
-        Generates the current games state embedding
+        Removes all words that donot possess letter
         """
-        input_layer = layers.Input(shape=(self.max_word_size,))
-        x_input = layers.Embedding(30, 100, mask_zero=True)(input_layer)
-        x_input = layers.Bidirectional(
-            layers.LSTM(100, dropout=0.2, return_sequences=True)
-        )(x_input)
-        x_input = layers.Bidirectional(
-            layers.LSTM(100, dropout=0.2, return_sequences=True)
-        )(x_input)
-        x_input = layers.GlobalAveragePooling1D()(x_input)
-        x_input = layers.Dense(100, activation="tanh")(x_input)
-        return models.Model(input_layer, x_input, name="StateEmbedding")
 
-    def get_guessed_embedding(self) -> models.Model:
+        possible_words: Set[str] = set([
+            word for word in self.possible_words if letter in word
+        ])
+
+        self.possible_words = possible_words
+
+    def prune_by_index(self, letter: str) -> None:
         """
-        Generates one-hot encoded matrix of guessed letters
+        Narrow search space by removing words by checking
+        if guessed letter occurs at similation position as
+        in queried word
         """
-        input_layer = layers.Input(shape=(self.max_word_size,))
-        x_input = layers.Dense(60, activation="tanh")(input_layer)
-        x_input = layers.Dense(60, activation="tanh")(x_input)
-        return models.Model(input_layer, x_input, name="GuessedEmbedding")
 
-    def __call__(self, state, guessed):
-        return self.full_model.predict([state, guessed]).flatten()
+        word_pool: Set[str] = set()
 
-    def fit(self, *args, **kwargs) -> None:
-        """fit tensorflow model"""
-        return self.full_model.fit(*args, **kwargs)
+        for word in self.possible_words:
+            for i, _ in enumerate(zip(self.guessed_word, self.current_word)):
+                if self.guessed_word[i] == "*" and self.current_word[i] == word[i] == letter:
+                    self.__update_word(i, letter=letter)
+                if letter in self.current_word:
+                    word_pool.add(word)
+        self.possible_words = word_pool
 
-    def train_on_batch(self, *args, **kwargs):
-        """train tensorflow model"""
-        return self.full_model.train_on_batch(*args, **kwargs)
+    def get_most_probable_letter(self, letter_frequencies: Dict[str, int]) -> str:
+        """Provides the letter with the highest probability of occuring"""
 
-    def summary(self):
-        """Provide summary to tensorflow model"""
-        self.full_model.summary()
+        highest_frequency: int = max(letter_frequencies, key=letter_frequencies.get)
 
-    def save(self, *args, **kwargs) -> None:
-        """Save tensorflow model"""
-        self.full_model.save(*args, **kwargs)
+        return highest_frequency
 
-    def load_weights(self, *args, **kwargs) -> None:
-        """Load weights of tensorflow model"""
-        self.full_model.load_weights(*args, **kwargs)
-        self.compile()
+    def get_current_state(self) -> str:
+        """get the guessing state of the guessing"""
+        return self.guessed_word
 
-    def compile(self, optimizer=None) -> None:
-        """Compile tensorflow model"""
-        if optimizer is not None:
-            self.full_model.compile(
-                loss="categorical_crossentropy", optimizer=optimizer
-            )
-        else:
-            self.full_model.compile(
-                loss="categorical_crossentropy",
-                optimizer=optimizers.Adam(1e-3, clipnorm=1),
-            )
+    def __update_word(self, index: int, letter: str) -> None:
+        """Add a guessed letter in hidden word"""
+        word_list = list(self.guessed_word)
+        word_list[index] = letter
+        self.guessed_word = "".join(word_list)
+
+    def get_possible_words(self) -> List[str]:
+        """Get all possible words considering the game state"""
+        return self.possible_words
+
+    def has_letter(self, letter: str) -> bool:
+        """Determines if letter is present in current word"""
+        return letter in self.current_word
 
 
-class Agent:
+def generate_letter_distribution(words: List[str]) -> Dict[str, int]:
     """
-    Agent is embedded with a model and policy.
-    Agent can use stochastic policy:
-        choose action randomly from computed probability
-    or greedy:
-        choose the most probable action out of unused actions.
-
-    Agent is trained off-policy, after a set
-    amount of episode (in my case I trained with 3 episodes),
-    and after each episode during training must be finalized
-    with finalize_episode method to compute the correct course
-    of actions.
-    train_model method will collect accumulated episodes and
-    perform one iteration of gradient descent with the collected
-    episode data.
-
-    Tried both with stochastic and greedy.
-    Greedy policy converges better.
+    Build a table containing the frequencies of every letter.
     """
 
-    def __init__(
-        self, model: models.Model, policy: str = "greedy", is_training: bool = True
-    ) -> None:
-        """ init method """
-        if policy not in ["greedy", "stochastic"]:
-            raise ValueError("Policy must be either stochastic or greedy")
+    table_frequencies: Dict[str, int] = defaultdict(int)
+    for word in words:
+        for letter in word:
+            table_frequencies[letter.upper()] = table_frequencies[letter] + 1
 
-        self._policy: str = policy
-        self.model: models.Model = model
-        self.is_training: bool = is_training
-        self.guessed: List[str] = []
-
-    @staticmethod
-    def guessed_mat(guessed):
-        """ generate guess matrix """
-        mat = np.empty([1, 26])
-
-        for i, letter in enumerate(letters):
-            mat[0, i] = 1 if letter in guessed else 0
-
-        return mat
-
-    def get_guessed_mat(self):
-        """ return guessed matrix """
-        return self.guessed_mat(self.guessed)
-
-    def reset_guessed(self) -> None:
-        """ reset guessed matrix """
-        self.guessed = []
-
-    @property
-    def policy(self):
-        """ return policy implemented """
-        return self._policy
-
-    @policy.setter
-    def set_policy(self, new_policy: str) -> str:
-        """ set policy to implement """
-        self._policy = new_policy
-
-    def select_action(self, state):
-        """ actions """
-
-        idx_act: int
-        probs = self.get_probs(state)
-
-        if self._policy == "greedy":
-            i = 1
-            sorted_probs = probs.argsort()
-
-            while letters[sorted_probs[-i]] in self.guessed:
-                print(i)
-                i = i + 1
-
-            idx_act = sorted_probs[-i]
-
-        elif self._policy == "stochastic":
-            idx_act = np.random.choice(np.arange(probs.shape[0]), p=probs)
-
-        guess = letters[idx_act]
-
-        if guess not in self.guessed:
-            self.guessed.append(guess)
-
-        return guess
-
-    def get_probs(self, state):
-        """ return probability """
-        raise NotImplementedError()
-
-    def eval(self):
-        """ evaluate model """
-        self.is_training = False
-        self.set_policy("greedy")
-
-    def train(self):
-        """ train model """
-        self.is_training = True
-
-
-class NetworkAgent(Agent):
-    """ Network Agent for Hangman game"""
-
-    def __init__(
-        self,
-        max_word_size: int,
-        model: models.Model,
-        policy: str = "greedy",
-        is_training: bool = True,
-    ) -> None:
-        super().__init__(model, policy, is_training)
-        self.max_word_size: int = max_word_size
-        self.state_history: List[str] = []
-        self.episodic_memory: List[str] = []
-
-    def get_probs(self, state) -> float:
-        """returns the probability of given state"""
-
-        state = self.preprocess_input(state)
-        probs = self.model(*state)
-        probs = probs / probs.sum()
-
-        return probs
-
-    def train_model(self) -> float:
-
-        inp_1, inp_2, obj = zip(*self.state_history)
-        inp_1 = np.vstack(list(inp_1)).astype(float)
-        inp_2 = np.vstack(list(inp_2)).astype(float)
-        obj = np.vstack(list(obj)).astype(float)
-
-        loss = self.model.train_on_batch([inp_1, inp_2], obj)
-        self.state_history = []
-        return loss
-
-    def finalize_episode(self, answer) -> None:
-        """ guess words """
-        input_one, input_two = zip(*self.episodic_memory)
-        input_one = np.vstack(list(input_one)).astype(
-            float
-        )  # stack the game state matrix
-        input_two = np.vstack(list(input_two)).astype(
-            float
-        )  # stack the one hot-encoded guessed
-
-        obj = 1.0 - input_two  # compute the unused letters one-hot encoded
-        len_ep = len(self.episodic_memory)  # length of episode
-
-        correct_mask = np.array(
-            [[1 if letter in answer else 0 for letter in letters]]
-        )  # get mask from correct answer
-        correct_mask = np.repeat(correct_mask, len_ep, axis=0).astype(float)
-        obj = correct_mask * obj
-        # the correct action is choosing the
-        # letters that are both unused AND exist in the word
-        obj /= obj.sum(axis=1).reshape(-1, 1)  # normalize so it sums to one
-
-        self.state_history.append((input_one, input_two, obj))
-        self.episodic_memory = []
-        self.reset_guessed()
-
-    def preprocess_input(self, state):
-        """ Process input """
-        new_input = []
-
-        for letter in state:
-            new_input.append(letters_dict[letter])
-
-        state = pad_sequences([new_input], maxlen=self.max_word_size)
-
-        if self.is_training:
-            self.episodic_memory.append((state, self.get_guessed_mat()))
-        return state, self.get_guessed_mat()
+    return table_frequencies
 
 
 if __name__ == "__main__":
-    word_net = WordNet()
-    agent_network = NetworkAgent(max_word_size=8, model=word_net)
+    cur_word: str = get_random_word()
+    pos_words: List[str] = set(
+        (word.decode().upper() for word in get_all_words() if len(word) == len(cur_word))
+    )
+    letter_frequency: Dict[str, int] = generate_letter_distribution(words=pos_words)
+    guessed_letters: List[str] = []
+    hangman_ai: HangmanAI = HangmanAI(word=cur_word, words=pos_words)
+
+    current_mistakes: int = 0 # pylint: disable=C0103
+    MAX_MISTAKES: Final[int] = 6
+    game_completed: bool = False # pylint: disable=C0103
+
+
+    while current_mistakes < MAX_MISTAKES:
+        game_state: str = hangman_ai.get_current_state()
+        if "*" not in game_state:
+            game_completed = True # pylint: disable=C0103
+            break
+        guess: str = hangman_ai.get_most_probable_letter(
+            letter_frequencies=letter_frequency
+        )
+        guessed_letters.append(guess)
+        letter_present = hangman_ai.has_letter(letter=guess)
+
+
+        if letter_present:
+            hangman_ai.prune_by_letter(letter=guess)
+            hangman_ai.prune_by_index(letter=guess)
+        else:
+            current_mistakes = current_mistakes + 1 # pylint: disable=C0103
+
+        pos_words = hangman_ai.get_possible_words()
+        letter_frequency = generate_letter_distribution(words=pos_words)
+
+        for guessed in guessed_letters:
+            letter_frequency[guessed] = -10
+
+        print(f"Current Guess: {guess} - Game State: {game_state}")
