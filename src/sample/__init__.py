@@ -1,3 +1,14 @@
+
+""" __init__.py """
+
+from hangman import play
+from utils import get_random_word
+
 def main():
-    """Entry point for the application script"""
-    print("Call your main application code here")
+    """ application entry point """
+    word: str = get_random_word()
+    play(word=word)
+
+
+if __name__ == "__main__":
+    main()
