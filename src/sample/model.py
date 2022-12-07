@@ -43,7 +43,9 @@ class HangmanAI:
                 if self.guessed_word[i] == "*" and self.current_word[i] == word[i] == letter:
                     self.__update_word(i, letter=letter)
                 if letter in self.current_word:
-                    word_pool.add(word)
+                    tmp = list(self.current_word)
+                    if tmp[i] == letter:
+                        word_pool.add(word)
         self.possible_words = word_pool
 
     def get_most_probable_letter(self, letter_frequencies: Dict[str, int]) -> str:
@@ -99,10 +101,11 @@ if __name__ == "__main__":
     game_completed: bool = False # pylint: disable=C0103
 
 
-    while current_mistakes < MAX_MISTAKES:
+    while not game_completed or current_mistakes < MAX_MISTAKES:
         game_state: str = hangman_ai.get_current_state()
         if "*" not in game_state:
             game_completed = True # pylint: disable=C0103
+            print(f"You Win!!! - Your word was: {cur_word}")
             break
         guess: str = hangman_ai.get_most_probable_letter(
             letter_frequencies=letter_frequency
@@ -123,4 +126,5 @@ if __name__ == "__main__":
         for guessed in guessed_letters:
             letter_frequency[guessed] = -10
 
+        game_state: str = hangman_ai.get_current_state()
         print(f"Current Guess: {guess} - Game State: {game_state}")

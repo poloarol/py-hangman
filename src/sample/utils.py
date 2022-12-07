@@ -37,11 +37,12 @@ def gameplay_words() -> List[str]:
     words (list[str]): All words of size five to eight
     """
 
-    min_word_size, max_word_size = 4, 9
+    # min_word_size, max_word_size = 4, 9
     all_words: List[str] = dictionary_connection()
-    words: List[str] = list((word.decode() for word in \
-        all_words if min_word_size < len(word) < max_word_size\
-            and word.isalpha()))
+    # words: List[str] = list((word.decode() for word in \
+    #     all_words if min_word_size < len(word) < max_word_size\
+    #         and word.isalpha()))
+    words: List[str] = list((word.decode() for word in all_words if word.isalpha()))
 
     return words
 
