@@ -3,8 +3,8 @@
 import time
 from typing import Any, Dict, Final, List, Set
 
-from model import generate_letter_distribution, HangmanAI
-from utils import get_all_words, get_random_word
+from .model import generate_letter_distribution, HangmanAI
+from .utils import get_all_words, get_random_word
 
 import outputformat as out
 

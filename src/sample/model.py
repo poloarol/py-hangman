@@ -4,7 +4,7 @@ import string
 from collections import defaultdict
 from typing import Dict, Final, Set, List
 
-from utils import get_all_words, get_random_word
+from .utils import get_all_words, get_random_word
 
 
 class HangmanAI:
