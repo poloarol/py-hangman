@@ -30,4 +30,8 @@ Complemented with a rule-based NLP system.
 1. Get a larger dictionary of words
 2. Get statistics, on how often models wins vs losses
 3. Build a GUI
-4. Ease use of program
+
+## How to Use
+1. statistics: python main.py --stats <any-value> (Working on this)
+2. ai player: python main.py --ai <any-value>
+3. human player: python main.py --human <any-value> (To be implemented)

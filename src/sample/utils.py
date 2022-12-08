@@ -46,7 +46,7 @@ def gameplay_words() -> List[str]:
 
     return words
 
-def get_all_words() -> Tuple:
+def get_all_words() -> List[bytes]:
     """ Build train and test set """
 
     words: List[str] = dictionary_connection()

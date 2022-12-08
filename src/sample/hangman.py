@@ -201,11 +201,12 @@ def step(player: Any, letter_frequency: Dict[str, int]) -> Dict[str, bool]:
     return {"guess": guess, "present": letter_present}
 
 
-def play(word: str):
+def play(word: str) -> str:
     """
     Simulates the Hangman game
     """
 
+    state: str
     num_mistakes: int = 0
     max_mistakes: Final[int] = 6
     game_completed: bool = False
@@ -219,7 +220,7 @@ def play(word: str):
     letter_frequency: Dict[str, int] = generate_letter_distribution(words=dictionary)
 
     while not game_completed:
-        state: str = ai_player.get_current_state()
+        state = ai_player.get_current_state()
         if "*" not in state:
             game_completed = True # pylint: disable=C0103
             print(f"You Win!!! - Your word was: {word}")
@@ -249,6 +250,8 @@ def play(word: str):
         if num_mistakes == max_mistakes:
             game_completed = True
             out.boxtitle(f"You lose!!! Your word was: {word}")
+
+    return state
 
 
 if __name__ == "__main__":
