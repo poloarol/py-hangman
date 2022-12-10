@@ -68,6 +68,21 @@ def get_random_word() -> str:
 
     return word.upper()
 
+def get_word() -> str:
+    """
+    Provides a random word of length 5 to 7 from
+    a list of 5 to 7 letter words.
+
+    return
+    ------
+    word: str
+    """
+
+    words: List[str] = [word for word in gameplay_words() if 5 < len(word) < 8]
+    word: str = random.choice(words)
+
+    return word.upper()
+
 def get_display_word(word: str, display: str, letter: str = "") -> str:
     """
     Displays letters as they are guessed.

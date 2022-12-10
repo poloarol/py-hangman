@@ -8,9 +8,8 @@ import sys
 # import numpy as np
 import pandas as pd
 
-from src.sample.hangman import play
-from src.sample.utils import get_all_words, get_random_word
-
+from src.sample.hangman import play, human_player
+from src.sample.utils import get_all_words, get_random_word, get_word
 
 def obtain_statistics(
     dataframe: pd.DataFrame, current_word: str, guess: str
@@ -20,11 +19,11 @@ def obtain_statistics(
     """
 
     if "*" in guess:
-        dataframe.loc[len(dataframe)] = [1, 0, "incomplete", len(current_word)]
+        dataframe.loc[len(dataframe)] = [current_word, guess, 1, 0, "incomplete", len(current_word)]
     elif current_word.lower() != guess.lower():
-        dataframe.loc[len(dataframe)] = [1, 0, "wrong", len(current_word)]
+        dataframe.loc[len(dataframe)] = [current_word, guess, 1, 0, "wrong", len(current_word)]
     else:
-        dataframe.loc[len(dataframe)] = [1, 1, "correct", len(current_word)]
+        dataframe.loc[len(dataframe)] = [current_word, guess, 1, 1, "correct", len(current_word)]
 
     return dataframe
 
@@ -60,17 +59,19 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.human:
-        word = get_random_word()
+        word = get_word()
+        # print(word)
+        human_player(word=word)
     elif args.ai:
         word = get_random_word()
         play(word=word)
     elif args.stats:
         words = get_all_words()
-        sample_size: int = int(0.75 * len(words))
+        sample_size: int = int(0.1 * len(words))
         words = random.sample(words, sample_size)
 
         df: pd.DataFrame = pd.DataFrame(
-            columns=["Actual", "Predicted", "Game-Status", "word-length"]
+            columns=["Word", "Guess", "Actual", "Predicted", "Game-Status", "word-length"]
         )
 
         text_trap = io.StringIO()
@@ -78,7 +79,7 @@ if __name__ == "__main__":
 
         for word in words:
             game_state = play(word=word.decode())
-            df = obtain_statistics(dataframe=df, current_word=word, guess=game_state)
+            df = obtain_statistics(dataframe=df, current_word=word.decode(), guess=game_state)
 
         df.to_csv("data/hangman-statistics.csv", sep=",", index=False)
     else:

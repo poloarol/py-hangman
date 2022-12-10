@@ -233,7 +233,7 @@ def play(word: str) -> str:
 
         guessed_letters.append(outcome.get("guess", ""))
 
-        time.sleep(1)
+        # time.sleep(1)
 
         possible_words: Set[str] = ai_player.get_possible_words()
         letter_frequency: Dict[str, int] = generate_letter_distribution(words=possible_words)
@@ -250,6 +250,51 @@ def play(word: str) -> str:
         if num_mistakes == max_mistakes:
             game_completed = True
             out.boxtitle(f"You lose!!! Your word was: {word}")
+
+    return ai_player.get_current_state()
+
+
+def human_player(word: str) -> str:
+    """ Human player """
+
+    game_completed: bool = False
+    guessed_letters: List[str] = []
+    max_mistakes: Final[int] = 6
+    num_mistakes: int = 0
+    state: str = "*" * len(word)
+
+    while not game_completed:
+        guess: str = input("Enter a letter: ").upper()
+
+        if not guess.isalpha() or len(guess) > 1:
+            raise ValueError("Enter a letter only!!!")
+
+        if guess in guessed_letters:
+            guess = input("Enter a new letter: ")
+
+        guessed_letters.append(guess)
+
+        if guess not in word:
+            num_mistakes = num_mistakes + 1
+        else:
+            tmp = list(state)
+
+            for i, letter in enumerate(word):
+                if guess == letter:
+                    tmp[i] = guess
+
+            state =  "".join(tmp)
+
+        if "*" not in state:
+            game_completed = True
+            out.boxtitle("You win")
+
+        if num_mistakes == max_mistakes:
+            game_completed = True
+            out.boxtitle(f"Your word was: {state}")
+
+        print_hangman_image(mistakes=num_mistakes)
+        out.boxtitle(state)
 
     return state
 
