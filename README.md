@@ -32,6 +32,9 @@ Complemented with a rule-based NLP system.
 3. Build a GUI
 
 ## How to Use
-1. statistics: python main.py --stats <any-value> (Working on this)
-2. ai player: python main.py --ai <any-value>
-3. human player: python main.py --human <any-value> (To be implemented)
+1. statistics: python main.py --stats abc
+    Current implementation seems to be faulty, as
+    model seems not to be able to solve puzzle.
+    (Might be due to the limited dictionary size)
+2. ai player: python main.py --ai abc
+3. human player: python main.py --human abc

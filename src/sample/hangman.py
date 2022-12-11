@@ -216,26 +216,26 @@ def play(word: str) -> str:
         (cur_word.decode().upper() for cur_word in get_all_words() if len(cur_word) == len(word))
     )
 
-    ai_player: HangmanAI = HangmanAI(word=word, words=dictionary)
+    player: HangmanAI = HangmanAI(word=word, words=dictionary)
     letter_frequency: Dict[str, int] = generate_letter_distribution(words=dictionary)
 
     while not game_completed:
-        state = ai_player.get_current_state()
+        state = player.get_current_state()
         if "*" not in state:
             game_completed = True # pylint: disable=C0103
             print(f"You Win!!! - Your word was: {word}")
             break
 
-        outcome: Dict[str, bool] = step(player=ai_player, letter_frequency=letter_frequency)
+        outcome: Dict[str, bool] = step(player=player, letter_frequency=letter_frequency)
         if not outcome.get("present", ""):
             num_mistakes = num_mistakes + 1
             print_hangman_image(mistakes=num_mistakes)
 
         guessed_letters.append(outcome.get("guess", ""))
 
-        # time.sleep(1)
+        time.sleep(1)
 
-        possible_words: Set[str] = ai_player.get_possible_words()
+        possible_words: Set[str] = player.get_possible_words()
         letter_frequency: Dict[str, int] = generate_letter_distribution(words=possible_words)
 
         for guessed in guessed_letters:
@@ -244,14 +244,14 @@ def play(word: str) -> str:
         # state: str = ai_player.get_current_state()
         # print(f"Current Guess: {outcome.get('guess', '')} - Game State: {state}")
 
-        state = ai_player.get_current_state()
+        state = player.get_current_state()
         out.boxtitle(state)
 
         if num_mistakes == max_mistakes:
             game_completed = True
             out.boxtitle(f"You lose!!! Your word was: {word}")
 
-    return ai_player.get_current_state()
+    return player.get_current_state()
 
 
 def human_player(word: str) -> str:
