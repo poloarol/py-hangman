@@ -38,3 +38,6 @@ Complemented with a rule-based NLP system.
     (Might be due to the limited dictionary size)
 2. ai player: python main.py --ai abc
 3. human player: python main.py --human abc
+
+## Running Tests
+python -m unittest discover -v
