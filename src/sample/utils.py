@@ -2,10 +2,9 @@
 
 import sys
 import random
-from typing import List, Tuple
+from typing import List
 
 import requests
-import outputformat as out
 from requests.exceptions import ConnectTimeout, HTTPError, ReadTimeout, Timeout
 
 
@@ -29,27 +28,23 @@ def dictionary_connection() -> List[str]:
 
 def gameplay_words() -> List[str]:
     """
-    Gets all words from the dictionary and words with
-    size five to eight.
+    Gets all words from the dictionary and
+    convert them from bytes to strings
 
     Return
     ------
     words (list[str]): All words of size five to eight
     """
 
-    # min_word_size, max_word_size = 4, 9
     all_words: List[str] = dictionary_connection()
-    # words: List[str] = list((word.decode() for word in \
-    #     all_words if min_word_size < len(word) < max_word_size\
-    #         and word.isalpha()))
     words: List[str] = list((word.decode() for word in all_words if word.isalpha()))
 
     return words
 
-def get_all_words() -> List[bytes]:
-    """ Build train and test set """
+def get_all_words() -> List[str]:
+    """ Provides all words in dictionary """
 
-    words: List[str] = dictionary_connection()
+    words: List[str] = gameplay_words()
     return words
 
 
@@ -62,7 +57,7 @@ def get_random_word() -> str:
     word: str
     """
 
-    words: List[str] = dictionary_connection()
+    words: List[str] = gameplay_words()
     word: str = random.choice(words)
 
     return word.upper()

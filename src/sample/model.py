@@ -23,9 +23,9 @@ class HangmanAI:
         Removes all words that donot possess letter
         """
 
-        possible_words: Set[str] = set([
+        possible_words: Set[str] = {
             word for word in self.possible_words if letter in word
-        ])
+        }
 
         self.possible_words = possible_words
 

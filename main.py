@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
         for word in words:
             if len(word) > 4:
-                cur_word: str = word.decode().upper()
+                cur_word: str = word.upper()
                 game_state = play(word=cur_word)
                 df = obtain_statistics(dataframe=df, current_word=cur_word, guess=game_state)
 
