@@ -36,7 +36,7 @@ if __name__ == "__main__":
         "--human",
         type=str,
         help="Human player leads the game",
-        action="store",
+        action="store_true",
         nargs="*",
     )
     parser.add_argument(
@@ -44,7 +44,7 @@ if __name__ == "__main__":
         "--ai",
         type=str,
         help="AI model plays the game",
-        action="store",
+        action="store_true",
         nargs="*",
     )
     parser.add_argument(
@@ -52,7 +52,7 @@ if __name__ == "__main__":
         "--stats",
         type=str,
         help="Get statistics on AI model",
-        action="store",
+        action="store_true",
         nargs="*",
     )
 
@@ -60,7 +60,6 @@ if __name__ == "__main__":
 
     if args.human:
         word = get_word()
-        # print(word)
         human_player(word=word)
     elif args.ai:
         word = get_random_word()
