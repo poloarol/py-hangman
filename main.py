@@ -66,9 +66,9 @@ if __name__ == "__main__":
         word = get_random_word()
         play(word=word)
     elif args.stats:
-        words = get_all_words()
-        sample_size: int = int(0.1 * len(words))
-        words = random.sample(words, sample_size)
+        all_words = get_all_words()
+        sample_size: int = int(0.4 * len(all_words))
+        words = random.sample(all_words, sample_size)
 
         df: pd.DataFrame = pd.DataFrame(
             columns=["Word", "Guess", "Actual", "Predicted", "Game-Status", "word-length"]
@@ -78,8 +78,10 @@ if __name__ == "__main__":
         sys.stdout = text_trap
 
         for word in words:
-            game_state = play(word=word.decode())
-            df = obtain_statistics(dataframe=df, current_word=word.decode(), guess=game_state)
+            if len(word) > 4:
+                cur_word: str = word.decode().upper()
+                game_state = play(word=cur_word)
+                df = obtain_statistics(dataframe=df, current_word=cur_word, guess=game_state)
 
         df.to_csv("data/hangman-statistics.csv", sep=",", index=False)
     else:

@@ -213,7 +213,7 @@ def play(word: str) -> str:
     guessed_letters: List[str] = []
 
     dictionary: List[str] = set(
-        (cur_word.decode().upper() for cur_word in get_all_words() if len(cur_word) == len(word))
+        (cur_word.decode().upper() for cur_word in get_all_words() if len(cur_word.decode()) == len(word))
     )
 
     player: HangmanAI = HangmanAI(word=word, words=dictionary)
@@ -233,7 +233,7 @@ def play(word: str) -> str:
 
         guessed_letters.append(outcome.get("guess", ""))
 
-        time.sleep(1)
+        # time.sleep(1)
 
         possible_words: Set[str] = player.get_possible_words()
         letter_frequency: Dict[str, int] = generate_letter_distribution(words=possible_words)
@@ -241,8 +241,8 @@ def play(word: str) -> str:
         for guessed in guessed_letters:
             letter_frequency[guessed] = -10
 
-        # state: str = ai_player.get_current_state()
-        # print(f"Current Guess: {outcome.get('guess', '')} - Game State: {state}")
+        # # state = player.get_current_state()
+        # # print(f"Current Guess: {outcome.get('guess', '')} - Game State: {state}")
 
         state = player.get_current_state()
         out.boxtitle(state)
@@ -251,7 +251,7 @@ def play(word: str) -> str:
             game_completed = True
             out.boxtitle(f"You lose!!! Your word was: {word}")
 
-    return player.get_current_state()
+    return state
 
 
 def human_player(word: str) -> str:
