@@ -28,8 +28,18 @@ Complemented with a rule-based NLP system.
 
 ## To-Do
 1. Get a larger dictionary of words
-2. Get statistics, on how often models wins vs losses
-3. Build a GUI
+2. Build a GUI
+
+## Insights
+- Currently the game has a global win/loss ratio of 42.199% / 57.801%
+- This low win ratio can be attributed to the fact that we use
+    a very small dictionary (10000 words). I think if you increase
+    the size of the dictionary, the AI's accuracy would increase.
+- Also currently, we are not guessinc words wrongly, only incompletely.
+    I think, wrong guesses would also become more prevalent as we increase the
+    dictionary size, especially for words who differ by just a letter, and
+    one of those letters in more prevalent in the English langauge than the
+    other.
 
 ## How to Use
 - Clone the repository
