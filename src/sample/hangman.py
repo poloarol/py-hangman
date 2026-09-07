@@ -212,9 +212,11 @@ def play(word: str) -> str:
     game_completed: bool = False
     guessed_letters: List[str] = []
 
-    dictionary: List[str] = set(
-        (cur_word.decode().upper() for cur_word in get_all_words() if len(cur_word.decode()) == len(word))
-    )
+    dictionary: set = {
+        cur_word.upper()
+        for cur_word in get_all_words()
+        if len(cur_word) == len(word)
+    }
 
     player: HangmanAI = HangmanAI(word=word, words=dictionary)
     letter_frequency: Dict[str, int] = generate_letter_distribution(words=dictionary)
@@ -291,7 +293,7 @@ def human_player(word: str) -> str:
 
         if num_mistakes == max_mistakes:
             game_completed = True
-            out.boxtitle(f"Your word was: {state}")
+            out.boxtitle(f"Your word was: {word}")
 
         print_hangman_image(mistakes=num_mistakes)
         out.boxtitle(state)

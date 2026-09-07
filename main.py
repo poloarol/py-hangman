@@ -31,29 +31,26 @@ def obtain_statistics(
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser("Welcome to py-Hangman")
+
     parser.add_argument(
         "-u",
         "--human",
-        type=str,
         help="Human player leads the game",
         action="store_true",
-        nargs="*",
     )
+
     parser.add_argument(
         "-a",
         "--ai",
-        type=str,
         help="AI model plays the game",
         action="store_true",
-        nargs="*",
     )
+
     parser.add_argument(
         "-s",
         "--stats",
-        type=str,
         help="Get statistics on AI model",
         action="store_true",
-        nargs="*",
     )
 
     args = parser.parse_args()
